@@ -10,6 +10,10 @@ I first wrote this at 16 to learn sockets, threading and GUI programming. I late
 
 Requires Python 3.9+ with Tkinter.
 
+**On a Mac:** double-click `NetRacer.app` (the first time, right-click it, choose Open, then Open again). It asks whether to play on this Mac, host, or join a friend. It needs `pip install -r requirements.txt` to have been run once.
+
+Or from a terminal:
+
 ```bash
 pip install -r requirements.txt
 
@@ -21,7 +25,7 @@ python main1.py                     # same machine
 python main1.py 192.168.1.20        # another machine on your network (HOST or HOST:PORT)
 ```
 
-Options (both scripts): `--laps N` (default 10, use the same value on both sides), and `--car` / `--opponent-car` to use your own car images instead of the default circles. The host also takes `--port`. When a race ends, either player can click **Rematch**, and the race restarts once both have.
+Options (both scripts): `--laps N` (default 10, use the same value on both sides), and `--car` / `--opponent-car` to use your own car images instead of the default circles. The host also takes `--port`. When a race ends, the game window switches to a result screen, and either player can click **Rematch**, and the race restarts once both have.
 
 ## Boosts and hacks
 

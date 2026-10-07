@@ -94,18 +94,20 @@ class Gui:
     def __init__(self, app, game, my_car_image=None, opponent_car_image=None):
         self.app = app
         self.game = game
-        self.result_window = None
+        self.result_box = None
         app.bg = BACKGROUND
 
-        self.ram_drawing = make_canvas(app, RAM_BAR_WIDTH, RAM_BAR_HEIGHT)
-        self.stack_drawing = make_canvas(app, STACK_WIDTH, STACK_HEIGHT)
-        self.status_text = Text(app, text="", size=13, color=DARK)
+        # The race screen and the result screen take turns filling the one window.
+        self.game_box = Box(app, width="fill", height="fill")
+        self.ram_drawing = make_canvas(self.game_box, RAM_BAR_WIDTH, RAM_BAR_HEIGHT)
+        self.stack_drawing = make_canvas(self.game_box, STACK_WIDTH, STACK_HEIGHT)
+        self.status_text = Text(self.game_box, text="", size=13, color=DARK)
 
-        middle = Box(app, layout="grid")
+        middle = Box(self.game_box, layout="grid")
         left = Box(middle, grid=[0, 0])
         self.track = make_canvas(middle, config.TRACK_WIDTH, config.TRACK_HEIGHT, grid=[1, 0])
         right = Box(middle, grid=[2, 0])
-        self.laps_text = Text(app, text="", size=15, color=DARK)
+        self.laps_text = Text(self.game_box, text="", size=15, color=DARK)
 
         self.buttons = {}
         for index in BOOST_BUTTONS:
@@ -166,7 +168,7 @@ class Gui:
         self.status_text.value = self._status_message()
         for index, button in self.buttons.items():
             button.set_enabled(game.can_cast(index))
-        if self.result_window:
+        if self.result_box:
             self._refresh_result()
 
     def _status_message(self):
@@ -257,19 +259,23 @@ class Gui:
         headline = {"me": "Congratulations: You won!",
                     "opponent": "Good effort: Your opponent won!",
                     "tie": "Photo finish: It's a tie!"}[winner]
-        window = Window(self.app, title="Race over", width=520, height=340, bg=BACKGROUND)
-        window.when_closed = self.app.destroy
-        banner = make_canvas(window, 480, 130)
+        self.game_box.hide()
+        box = Box(self.app, width="fill", height="fill")
+        Box(box, width=1, height=150)
+        banner = make_canvas(box, 640, 190)
         canvas = banner.tk
-        rounded_rect(canvas, 4, 12, 476, 118, radius=12, fill="white", outline=DARK, width=2)
-        canvas.create_text(240, 65, text=headline, width=440, justify="center",
-                           font=(FONT, 22, "bold"), fill=DARK)
-        row = Box(window, layout="grid")
+        rounded_rect(canvas, 4, 12, 636, 178, radius=16, fill="white", outline=DARK, width=2)
+        canvas.create_text(320, 70, text=headline, width=590, justify="center",
+                           font=(FONT, 32, "bold"), fill=DARK)
+        canvas.create_text(320, 135, justify="center", font=(FONT, 14), fill=DARK,
+                           text=(f"Final laps: you {self.my_car.laps}/{self.game.max_laps}, "
+                                 f"opponent {self.opponent_car.laps}/{self.game.max_laps}"))
+        row = Box(box, layout="grid")
         self.rematch_button = CanvasButton(row, "REMATCH", BOOST_GREEN, self._rematch_clicked,
-                                           230, 90, font_size=18, grid=[0, 0])
-        CanvasButton(row, "QUIT", HACK_RED, self.app.destroy, 230, 90, font_size=18, grid=[1, 0])
-        self.result_status = Text(window, text="", size=13, color=DARK)
-        self.result_window = window
+                                           290, 110, font_size=22, grid=[0, 0])
+        CanvasButton(row, "QUIT", HACK_RED, self.app.destroy, 290, 110, font_size=22, grid=[1, 0])
+        self.result_status = Text(box, text="", size=15, color=DARK)
+        self.result_box = box
         self._refresh_result()
 
     def _rematch_clicked(self):
@@ -293,8 +299,8 @@ class Gui:
         self.game.start_rematch()
         self.my_car.reset()
         self.opponent_car.reset()
-        if self.result_window:
-            self.result_window.when_closed = None
-            self.result_window.destroy()
-            self.result_window = None
+        if self.result_box:
+            self.result_box.destroy()
+            self.result_box = None
+            self.game_box.show()
         self._refresh()

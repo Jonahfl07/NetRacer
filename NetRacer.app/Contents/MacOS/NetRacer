@@ -1,0 +1,35 @@
+#!/bin/bash
+# NetRacer launcher. The game files live next to this app, in ../../game.
+DIR="$(cd "$(dirname "$0")/../../.." && pwd)"
+cd "$DIR" || exit 1
+export PATH="/Library/Frameworks/Python.framework/Versions/Current/bin:/opt/homebrew/bin:/usr/local/bin:$PATH"
+LOG="${TMPDIR:-/tmp}/netracer.log"
+PORT=5050
+
+ask() { osascript -e "$1" 2>/dev/null; }
+
+CHOICE=$(ask 'button returned of (display dialog "How do you want to play?" with title "NetRacer" buttons {"Join a friend", "Host a game", "Both players on this Mac"} default button "Both players on this Mac")')
+[ -z "$CHOICE" ] && exit 0
+
+failed() {
+  ask "display dialog \"NetRacer could not start. Make sure Python 3 and guizero are installed (pip3 install guizero).\" with title \"NetRacer\" buttons {\"OK\"} default button \"OK\" with icon stop" >/dev/null
+  exit 1
+}
+
+case "$CHOICE" in
+  "Both players on this Mac")
+    python3 main.py --port $PORT >"$LOG" 2>&1 &
+    HOST=$!
+    sleep 2
+    python3 main1.py localhost:$PORT >>"$LOG" 2>&1 || { kill $HOST 2>/dev/null; failed; }
+    kill $HOST 2>/dev/null
+    ;;
+  "Host a game")
+    python3 main.py >"$LOG" 2>&1 || failed
+    ;;
+  "Join a friend")
+    ADDRESS=$(ask 'text returned of (display dialog "Type your friend'"'"'s address (for example 192.168.1.20):" default answer "" with title "NetRacer" buttons {"Cancel", "Join"} default button "Join")')
+    [ -z "$ADDRESS" ] && exit 0
+    python3 main1.py "$ADDRESS" >"$LOG" 2>&1 || failed
+    ;;
+esac
