@@ -2,7 +2,7 @@
 
 A two-player networked racing game in Python. Each player's car laps a track automatically. You win by spending RAM on boosts and hacks at the right moment. Casts go onto a shared **stack** (like Magic: The Gathering). Every new cast restarts a 5-second countdown so the other player can respond. When the countdown runs out, the stack resolves last-in, first-out.
 
-The window follows the design in my project report ([docs/NetRacer_Report.docx](docs/NetRacer_Report.docx)): a RAM bar along the top, the action stack under it (new actions join on the right and the rightmost resolves first; blue is yours and orange is your opponent's), boosts down the left in green, hacks down the right in red, and the track in the middle.
+The window has a RAM bar along the top, the action stack under it (new actions join on the right and the rightmost resolves first; blue is yours and orange is your opponent's), boosts down the left in green, hacks down the right in red, and the track in the middle.
 
 I first wrote this at 16 to learn sockets, threading and GUI programming. I later restructured it into modules and fixed the bugs listed under [What changed in the cleanup](#what-changed-in-the-cleanup).
 
@@ -74,5 +74,5 @@ RAM recharges at 0.2 per second, up to a maximum of 12. The stack holds up to 6 
 - **The "you lost" screen** crashed. It now works, and a tie is handled too.
 - **RAM costs.** RAM is now charged when you cast. Previously, only the top item of the stack was charged.
 - **Hardcoded paths and ports** were replaced with command-line options, and the cars are now drawn in code, so the game needs no image files.
-- **GUI redesign** to match the report: RAM bar, stack row with colour-coded entries, green boost and red hack buttons that grey out when you can't use them, and a result screen with Rematch and Quit.
+- **GUI redesign:** RAM bar, stack row with colour-coded entries, green boost and red hack buttons that grey out when you can't use them, and a result screen with Rematch and Quit.
 - Removed duplicate imports and dead code (`update_speed`, `check_boundaries`).
