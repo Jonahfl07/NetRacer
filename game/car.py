@@ -34,7 +34,8 @@ class Car:
         """Advance one frame. Returns True if this move completed a lap."""
         if not self.player.speed:
             return False
-        step = max(1, int(config.MOVE_STEP * self.player.speed))
+        # Keep the fractional part: rounding the step down made a 25% boost do nothing.
+        step = config.MOVE_STEP * self.player.speed
         min_x = min_y = config.TRACK_MARGIN
         max_x = width - config.TRACK_MARGIN - config.CAR_SIZE
         max_y = height - config.TRACK_MARGIN - config.CAR_SIZE
