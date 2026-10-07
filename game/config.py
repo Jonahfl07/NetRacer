@@ -27,5 +27,5 @@ MAX_STACK_SIZE = 6
 COUNTDOWN_SECONDS = 5    # quiet time before the stack starts resolving
 RESOLVE_STEP_MS = 1000   # delay between resolving each stack item
 
-DEFAULT_LAPS = 10
+LAP_OPTIONS = [3, 5, 10, 15, 20]  # what the players can vote for
 DEFAULT_PORT = 5000

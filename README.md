@@ -25,7 +25,7 @@ python main1.py                     # same machine
 python main1.py 192.168.1.20        # another machine on your network (HOST or HOST:PORT)
 ```
 
-Options (both scripts): `--laps N` (default 10, use the same value on both sides), and `--car` / `--opponent-car` to use your own car images instead of the default circles. The host also takes `--port`. When a race ends, the game window switches to a result screen, and either player can click **Rematch**, and the race restarts once both have.
+Before each race the two players vote on how many laps it should be (3, 5, 10, 15 or 20). Both votes are revealed and one is picked at random. Options (both scripts): `--laps N` skips the vote and races N laps (use the same value on both sides), and `--car` / `--opponent-car` to use your own car images instead of the default circles. The host also takes `--port`. When a race ends, the game window switches to a result screen, and either player can click **Rematch**, and the race restarts once both have.
 
 ## Boosts and hacks
 

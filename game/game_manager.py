@@ -6,6 +6,7 @@ touched by two threads at once.
 """
 
 import queue
+import random
 import time
 
 import config
@@ -13,6 +14,8 @@ from action_stack import Action, ActionStack
 from boosts import BOOSTS, apply_boost
 
 REMATCH = "rematch"
+VOTE_PREFIX = "vote."   # "vote.5": I want a 5 lap race
+LAPS_PREFIX = "laps."   # "laps.5": the host drew the 5 lap vote
 
 
 class GameManager:
@@ -21,7 +24,12 @@ class GameManager:
         self.me = me
         self.opponent = opponent
         self.connection = connection
-        self.max_laps = max_laps
+        self.max_laps = max_laps  # None until the lap vote is settled
+        self.started = max_laps is not None
+        self.my_vote = None
+        self.opponent_vote = None
+        self.chosen_laps = None
+        self._reveal_started = None
         self._schedule = schedule  # schedule(ms, fn): run fn later on the GUI thread
         self.stack = ActionStack(config.MAX_STACK_SIZE)
         self.opponent_left = False
@@ -72,8 +80,60 @@ class GameManager:
                 self.opponent_left = True
             elif line == REMATCH:
                 self.opponent_wants_rematch = True
+            elif line.startswith(VOTE_PREFIX):
+                self._handle_vote(line[len(VOTE_PREFIX):])
+            elif line.startswith(LAPS_PREFIX):
+                self._handle_laps(line[len(LAPS_PREFIX):])
             else:
                 self._handle_action_line(line)
+
+    # The lap vote. Both players send a vote; the host draws one of the two at
+    # random and tells the guest, so both sides agree on a single answer.
+
+    @staticmethod
+    def _parse_laps(text):
+        try:
+            laps = int(text)
+        except ValueError:
+            return None
+        return laps if laps in config.LAP_OPTIONS else None
+
+    def cast_vote(self, laps):
+        if self.started or self.my_vote is not None or laps not in config.LAP_OPTIONS:
+            return
+        self.my_vote = laps
+        self.connection.send(f"{VOTE_PREFIX}{laps}")
+        self._draw_if_host()
+
+    def _handle_vote(self, text):
+        laps = self._parse_laps(text)
+        if laps is not None and self.opponent_vote is None:
+            self.opponent_vote = laps
+            self._draw_if_host()
+
+    def _handle_laps(self, text):
+        laps = self._parse_laps(text)
+        if laps is not None and self.my_id != "host" and self.chosen_laps is None:
+            self._set_chosen(laps)
+
+    def _draw_if_host(self):
+        if (self.my_id == "host" and self.chosen_laps is None
+                and self.my_vote is not None and self.opponent_vote is not None):
+            chosen = random.choice([self.my_vote, self.opponent_vote])
+            self._set_chosen(chosen)
+            self.connection.send(f"{LAPS_PREFIX}{chosen}")
+
+    def _set_chosen(self, laps):
+        self.chosen_laps = laps
+        self._reveal_started = time.monotonic()
+
+    def reveal_seconds(self):
+        """Seconds since the drawn vote was announced (0 before that)."""
+        return 0.0 if self._reveal_started is None else time.monotonic() - self._reveal_started
+
+    def finish_vote(self):
+        self.max_laps = self.chosen_laps
+        self.started = True
 
     def _handle_action_line(self, line):
         try:
@@ -88,7 +148,8 @@ class GameManager:
     def can_cast(self, index):
         """Whether the local player could cast this boost right now."""
         return (
-            not self.resolving
+            self.started
+            and not self.resolving
             and not self.winner
             and not self.stack.is_full()
             and self.me.can_afford(BOOSTS[index].cost)

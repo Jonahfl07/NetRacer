@@ -4,7 +4,8 @@ from guizero import App, Box, Text
 
 import config
 from boosts import BOOSTS
-from gui import BACKGROUND, BOOST_GREEN, DARK, FONT, HACK_RED, CanvasButton, make_canvas, rounded_rect
+from widgets import (BACKGROUND, BOOST_GREEN, DARK, FONT, HACK_RED, CanvasButton, make_canvas,
+                     rounded_rect)
 
 INTRO = [
     f"Every boost or hack you cast goes on a shared stack and restarts a {config.COUNTDOWN_SECONDS} second countdown.",

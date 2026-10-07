@@ -11,20 +11,15 @@ because macOS ignores custom button colours.
 import math
 import time
 
-from guizero import Box, Drawing, Text, Window
+from guizero import Box, Text
 
 import config
 from boosts import BOOSTS
 from car import Car
+from vote import VoteScreen
+from widgets import (BACKGROUND, BOOST_GREEN, DARK, DISABLED_TEXT, FONT, HACK_RED, PURPLE,
+                     CanvasButton, make_canvas, rounded_rect)
 
-BACKGROUND = "#dedfff"
-DARK = "#2b2b3b"
-PURPLE = "#9494ff"
-BOOST_GREEN = "#c2f5c9"
-HACK_RED = "#ff6b6b"
-DISABLED = "#cfd0e0"
-DISABLED_TEXT = "#8a8a9c"
-FONT = "Helvetica"
 
 RAM_BAR_WIDTH = 600
 RAM_BAR_HEIGHT = 36
@@ -39,60 +34,6 @@ BUTTON_HEIGHT = 110
 
 BOOST_BUTTONS = [0, 1, 2]  # Nitro, Firewall, Hyperthreading: down the left
 HACK_BUTTONS = [3, 4]      # System Shutdown, Spike Deployment: down the right
-
-
-def rounded_rect(canvas, x1, y1, x2, y2, radius=12, **options):
-    points = [
-        x1 + radius, y1, x2 - radius, y1, x2, y1, x2, y1 + radius,
-        x2, y2 - radius, x2, y2, x2 - radius, y2, x1 + radius, y2,
-        x1, y2, x1, y2 - radius, x1, y1 + radius, x1, y1,
-    ]
-    return canvas.create_polygon(points, smooth=True, **options)
-
-
-def make_canvas(parent, width, height, **layout):
-    drawing = Drawing(parent, width=width, height=height, **layout)
-    drawing.tk.config(bg=BACKGROUND, highlightthickness=0, bd=0)
-    return drawing
-
-
-class CanvasButton:
-    """A clickable rounded rectangle that can be greyed out."""
-
-    def __init__(self, parent, text, colour, command, width, height, font_size=13, **layout):
-        self.text = text
-        self.colour = colour
-        self.command = command
-        self.width = width
-        self.height = height
-        self.font_size = font_size
-        self.enabled = True
-        self.drawing = make_canvas(parent, width, height, **layout)
-        self.canvas = self.drawing.tk
-        self.drawing.when_clicked = lambda event: self._clicked()
-        self._draw()
-
-    def set_enabled(self, enabled):
-        if enabled != self.enabled:
-            self.enabled = enabled
-            self._draw()
-
-    def _clicked(self):
-        if self.enabled:
-            self.command()
-
-    def _draw(self):
-        canvas = self.canvas
-        canvas.delete("all")
-        canvas.config(cursor="hand2" if self.enabled else "arrow")
-        fill = self.colour if self.enabled else DISABLED
-        rounded_rect(canvas, 8, 8, self.width - 8, self.height - 8, radius=12,
-                     fill=fill, outline=DARK if self.enabled else DISABLED_TEXT, width=2)
-        canvas.create_text(
-            self.width / 2, self.height / 2, text=self.text, justify="center",
-            width=self.width - 24, font=(FONT, self.font_size, "bold"),
-            fill=DARK if self.enabled else DISABLED_TEXT,
-        )
 
 
 class Gui:
@@ -127,6 +68,12 @@ class Gui:
         self.opponent_car = Car(self.track, game.opponent, config.OPPONENT_COLOUR,
                                 config.CAR_DRAW_OFFSET, opponent_car_image)
 
+        # Without --laps, the race opens with a vote on its length.
+        self.vote = None
+        if not game.started:
+            self.game_box.hide()
+            self.vote = VoteScreen(app, game, self._vote_finished)
+
         app.repeat(config.FRAME_MS, self._frame)
         app.repeat(1000, self._recharge)
         app.repeat(100, self._refresh)
@@ -145,6 +92,8 @@ class Gui:
     def _frame(self):
         game = self.game
         game.process_inbox()
+        if not game.started:
+            return
         if game.rematch_ready():
             self._start_rematch()
             return
@@ -163,8 +112,12 @@ class Gui:
         if not self.game.winner:
             self._draw_stack()
 
+    def _vote_finished(self):
+        self.game.finish_vote()
+        self.game_box.show()
+
     def _recharge(self):
-        if not self.game.winner:
+        if self.game.started and not self.game.winner:
             self.game.me.recharge()
             self.game.opponent.recharge()
 
@@ -173,8 +126,8 @@ class Gui:
         self._draw_ram()
         self._draw_stack()
         self.laps_text.value = (
-            f"Your laps: {self.my_car.laps}/{game.max_laps}"
-            f"        Opponent laps: {self.opponent_car.laps}/{game.max_laps}"
+            f"Your laps: {self.my_car.laps}/{game.max_laps or '?'}"
+            f"        Opponent laps: {self.opponent_car.laps}/{game.max_laps or '?'}"
         )
         self.status_text.value = self._status_message()
         for index, button in self.buttons.items():

@@ -29,8 +29,8 @@ def parse_args():
     for sub in (host, join):
         sub.add_argument("--no-info", action="store_true",
                          help="skip the how-to-play page")
-        sub.add_argument("--laps", type=int, default=config.DEFAULT_LAPS,
-                         help="laps needed to win (both players should use the same value)")
+        sub.add_argument("--laps", type=int,
+                         help="skip the lap vote and race this many laps (use the same value on both sides)")
         sub.add_argument("--car", help="optional image for your car (default: a blue circle)")
         sub.add_argument("--opponent-car",
                          help="optional image for your opponent's car (default: an orange circle)")
