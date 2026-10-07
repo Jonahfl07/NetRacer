@@ -2,7 +2,7 @@
 
 A two-player networked racing game in Python. Each player's car laps a track automatically. You win by spending RAM on boosts and hacks at the right moment. Casts go onto a shared **stack** (like Magic: The Gathering). Every new cast restarts a 5-second countdown so the other player can respond. When the countdown runs out, the stack resolves last-in, first-out.
 
-The window follows the design in my project report ([docs/NetRacer_Report.docx](docs/NetRacer_Report.docx)): a RAM bar along the top, the action stack under it (the next action to resolve is on the left, blue is yours and orange is your opponent's), boosts down the left in green, hacks down the right in red, and the track in the middle.
+The window follows the design in my project report ([docs/NetRacer_Report.docx](docs/NetRacer_Report.docx)): a RAM bar along the top, the action stack under it (new actions join on the right and the rightmost resolves first; blue is yours and orange is your opponent's), boosts down the left in green, hacks down the right in red, and the track in the middle.
 
 I first wrote this at 16 to learn sockets, threading and GUI programming. I later restructured it into modules and fixed the bugs listed under [What changed in the cleanup](#what-changed-in-the-cleanup).
 

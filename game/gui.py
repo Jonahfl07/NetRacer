@@ -184,7 +184,7 @@ class Gui:
         rounded_rect(canvas, 2, 2, STACK_WIDTH - 2, STACK_HEIGHT - 2, radius=14,
                      fill="white", outline=DARK, width=2)
         stack = self.game.stack
-        items = list(reversed(stack.items()))  # next to resolve first, so leftmost
+        items = stack.items()  # oldest on the left; new actions join on the right and resolve first
         if not items:
             canvas.create_text(STACK_WIDTH / 2, STACK_HEIGHT / 2, text="Stack is empty",
                                font=(FONT, 14), fill=DISABLED_TEXT)
@@ -207,8 +207,8 @@ class Gui:
     def _draw_arrow(self, canvas, x):
         mid = STACK_HEIGHT / 2
         canvas.create_polygon(
-            x, mid - 6, x + 14, mid - 6, x + 14, mid - 12, x + 24, mid,
-            x + 14, mid + 12, x + 14, mid + 6, x, mid + 6,
+            x + 24, mid - 6, x + 10, mid - 6, x + 10, mid - 12, x, mid,
+            x + 10, mid + 12, x + 10, mid + 6, x + 24, mid + 6,
             fill="#dfe3e8", outline=DARK, width=2)
 
     def _draw_dots(self, canvas, x):
