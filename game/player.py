@@ -14,7 +14,7 @@ class Player:
         """Back to starting values, for the beginning of a race or a rematch."""
         self.ram = config.STARTING_RAM
         self.recharge_rate = config.RAM_RECHARGE_RATE
-        self.speed_multiplier = 1.0
+        self.speed_multiplier = 0.5
         # Counters rather than booleans, so two overlapping effects of the
         # same kind don't cancel each other when the first one wears off.
         self._firewalls = 0
