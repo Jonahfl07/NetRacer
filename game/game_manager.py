@@ -92,14 +92,18 @@ class GameManager:
             and not self.winner
             and not self.stack.is_full()
             and self.me.can_afford(BOOSTS[index].cost)
-            and not self.opponent.firewall_active
+            and not self.hack_blocked(index)
         )
+
+    def hack_blocked(self, index):
+        """A firewall only stops hacks aimed at its owner; boosts are never blocked."""
+        return BOOSTS[index].is_hack and self.opponent.firewall_active
 
     def cast(self, index):
         """The local player pressed a boost button."""
         boost = BOOSTS[index]
         if not self.can_cast(index):
-            if self.opponent.firewall_active:
+            if self.hack_blocked(index):
                 print(f"Opponent's firewall blocked your {boost.name}")
             return
         self.me.spend(boost.cost)
@@ -170,7 +174,7 @@ class GameManager:
             caster, defender = self.me, self.opponent
         else:
             caster, defender = self.opponent, self.me
-        if defender.firewall_active:
+        if boost.is_hack and defender.firewall_active:
             print(f"{boost.name} from {caster.name} was blocked by a firewall")
             return
         target = defender if boost.is_hack else caster

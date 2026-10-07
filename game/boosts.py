@@ -8,16 +8,22 @@ class Boost:
     name: str
     cost: int
     is_hack: bool  # hacks hit the opponent; boosts help the caster
+    description: str = ""  # shown on the how-to-play page
 
 
 NITRO, FIREWALL, HYPERTHREADING, SYSTEM_SHUTDOWN, SPIKE_DEPLOYMENT = range(5)
 
 BOOSTS = [
-    Boost("Nitro", 4, is_hack=False),
-    Boost("Firewall", 5, is_hack=False),
-    Boost("Hyperthreading", 10, is_hack=False),
-    Boost("System Shutdown", 9, is_hack=True),
-    Boost("Spike Deployment", 3, is_hack=True),
+    Boost("Nitro", 4, is_hack=False,
+          description="Your car is 25% faster for 5 seconds."),
+    Boost("Firewall", 5, is_hack=False,
+          description="For 10 seconds your opponent can't hack you, and their hacks on the stack are cancelled."),
+    Boost("Hyperthreading", 10, is_hack=False,
+          description="Your RAM recharges 1.5x faster for the rest of the race."),
+    Boost("System Shutdown", 9, is_hack=True,
+          description="Freezes your opponent's car for 10 seconds."),
+    Boost("Spike Deployment", 3, is_hack=True,
+          description="Your opponent's car is 10% slower for the rest of the race."),
 ]
 
 

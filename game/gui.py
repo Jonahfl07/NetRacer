@@ -8,6 +8,9 @@ Buttons and bars are drawn on canvases rather than using native buttons,
 because macOS ignores custom button colours.
 """
 
+import math
+import time
+
 from guizero import Box, Drawing, Text, Window
 
 import config
@@ -25,6 +28,8 @@ FONT = "Helvetica"
 
 RAM_BAR_WIDTH = 600
 RAM_BAR_HEIGHT = 36
+RAM_BAR_SLANT = 22      # how far the top edge is pushed right, like a Pokemon HP bar
+DOT_CYCLE_SECONDS = 1.4  # one left-to-right pulse of the three dots
 STACK_WIDTH = 920
 STACK_HEIGHT = 90
 CHIP_WIDTH = 118
@@ -125,6 +130,7 @@ class Gui:
         app.repeat(config.FRAME_MS, self._frame)
         app.repeat(1000, self._recharge)
         app.repeat(100, self._refresh)
+        app.repeat(50, self._animate)
         self._refresh()
 
     def _make_button(self, parent, index, colour):
@@ -151,6 +157,11 @@ class Gui:
             game.record_lap(self.my_car.laps, self.opponent_car.laps)
             if game.winner:
                 self._show_result()
+
+    def _animate(self):
+        # The pulsing dots need redrawing faster than the 100 ms refresh.
+        if not self.game.winner:
+            self._draw_stack()
 
     def _recharge(self):
         if not self.game.winner:
@@ -181,7 +192,7 @@ class Gui:
         if remaining is not None:
             return f"Resolving in {remaining:.0f}s: you can still respond"
         if game.opponent.firewall_active:
-            return "Opponent's firewall is up: you can't cast"
+            return "Opponent's firewall is up: your hacks are blocked"
         return "Cast a boost or a hack: each one starts a 5 second countdown"
 
     # Drawing
@@ -200,16 +211,17 @@ class Gui:
         canvas = self.ram_drawing.tk
         canvas.delete("all")
         me = self.game.me
-        rounded_rect(canvas, 2, 2, RAM_BAR_WIDTH - 2, RAM_BAR_HEIGHT - 2, radius=10,
-                     fill="white", outline=DARK, width=2)
-        fill_width = (RAM_BAR_WIDTH - 10) * me.ram / me.max_ram
-        if fill_width >= 20:
-            rounded_rect(canvas, 5, 5, 5 + fill_width, RAM_BAR_HEIGHT - 5, radius=8,
-                         fill=PURPLE, outline="")
-        elif fill_width > 0:
-            canvas.create_rectangle(5, 5, 5 + fill_width, RAM_BAR_HEIGHT - 5,
-                                    fill=PURPLE, outline="")
-        canvas.create_text(RAM_BAR_WIDTH / 2, RAM_BAR_HEIGHT / 2,
+        width, height, slant = RAM_BAR_WIDTH, RAM_BAR_HEIGHT, RAM_BAR_SLANT
+        canvas.create_polygon(
+            2 + slant, 2, width - 2, 2, width - 2 - slant, height - 2, 2, height - 2,
+            fill="white", outline=DARK, width=2, joinstyle="round")
+        length = width - 10 - slant
+        filled = length * me.ram / me.max_ram
+        if filled > 0:
+            canvas.create_polygon(
+                5 + slant, 5, 5 + slant + filled, 5, 5 + filled, height - 5, 5, height - 5,
+                fill=PURPLE, outline="")
+        canvas.create_text((width + slant) / 2, height / 2,
                            text=f"RAM: {int(me.ram)}/{me.max_ram}",
                            font=(FONT, 14, "bold"), fill=DARK)
 
@@ -247,10 +259,15 @@ class Gui:
             fill="#dfe3e8", outline=DARK, width=2)
 
     def _draw_dots(self, canvas, x):
+        # Three dots that swell one after another, left to right, as a "your move" signal.
         mid = STACK_HEIGHT / 2
-        for radius, offset in ((4, 0), (7, 18), (11, 40)):
-            canvas.create_oval(x + offset - radius, mid - radius, x + offset + radius,
-                               mid + radius, fill="white", outline=DARK, width=2)
+        phase = (time.time() / DOT_CYCLE_SECONDS) % 1
+        for number, (radius, offset) in enumerate(((4, 0), (7, 18), (11, 40))):
+            since = (phase - number * 0.2) % 1
+            pulse = math.sin(math.pi * since / 0.4) if since < 0.4 else 0
+            size = radius * (1 + 0.6 * pulse)
+            canvas.create_oval(x + offset - size, mid - size, x + offset + size, mid + size,
+                               fill=PURPLE if pulse > 0.5 else "white", outline=DARK, width=2)
 
     # End of race
 

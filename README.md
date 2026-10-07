@@ -10,7 +10,7 @@ I first wrote this at 16 to learn sockets, threading and GUI programming. I late
 
 Requires Python 3.9+ with Tkinter.
 
-**On a Mac:** double-click `NetRacer.app` (the first time, right-click it, choose Open, then Open again). It asks whether to play on this Mac, host, or join a friend. It needs `pip install -r requirements.txt` to have been run once.
+**On a Mac:** double-click `NetRacer.app` (the first time, right-click it, choose Open, then Open again). It asks whether to play on this Mac, host, or join a friend, and shows a how-to-play page describing each boost and hack before the game starts. It needs `pip install -r requirements.txt` to have been run once.
 
 Or from a terminal:
 
@@ -32,7 +32,7 @@ Options (both scripts): `--laps N` (default 10, use the same value on both sides
 | Name | RAM | Effect |
 |---|---|---|
 | Nitro | 4 | Your speed x1.25 for 5 s |
-| Firewall | 5 | For 10 s, your opponent can't cast, and their actions resolving on the stack are negated |
+| Firewall | 5 | For 10 s, your opponent can't cast hacks against you, and their hacks resolving on the stack are cancelled. Boosts are unaffected |
 | Hyperthreading | 10 | Your RAM recharge rate x1.5 for the rest of the race |
 | System Shutdown | 9 | *Hack:* freezes your opponent for 10 s |
 | Spike Deployment | 3 | *Hack:* your opponent's speed x0.9 for the rest of the race |

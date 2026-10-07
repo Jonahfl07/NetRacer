@@ -12,6 +12,7 @@ from guizero import App
 import config
 from game_manager import GameManager
 from gui import Gui
+from info import show_info
 from network import PeerConnection
 from player import Player
 
@@ -26,6 +27,8 @@ def parse_args():
     join.add_argument("address", help="host machine, as HOST or HOST:PORT")
 
     for sub in (host, join):
+        sub.add_argument("--no-info", action="store_true",
+                         help="skip the how-to-play page")
         sub.add_argument("--laps", type=int, default=config.DEFAULT_LAPS,
                          help="laps needed to win (both players should use the same value)")
         sub.add_argument("--car", help="optional image for your car (default: a blue circle)")
@@ -36,6 +39,8 @@ def parse_args():
 
 def main():
     args = parse_args()
+    if not args.no_info and not show_info():
+        return
     if args.mode == "host":
         my_id = "host"
         connection = PeerConnection.host(args.port)

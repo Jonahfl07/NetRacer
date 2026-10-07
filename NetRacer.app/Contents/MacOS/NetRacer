@@ -18,7 +18,7 @@ failed() {
 
 case "$CHOICE" in
   "Both players on this Mac")
-    python3 main.py --port $PORT >"$LOG" 2>&1 &
+    python3 main.py --no-info --port $PORT >"$LOG" 2>&1 &
     HOST=$!
     sleep 2
     python3 main1.py localhost:$PORT >>"$LOG" 2>&1 || { kill $HOST 2>/dev/null; failed; }
