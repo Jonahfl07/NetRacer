@@ -12,6 +12,8 @@ import config
 from action_stack import Action, ActionStack
 from boosts import BOOSTS, apply_boost
 
+REMATCH = "rematch"
+
 
 class GameManager:
     def __init__(self, my_id, me, opponent, connection, max_laps, schedule):
@@ -20,13 +22,34 @@ class GameManager:
         self.opponent = opponent
         self.connection = connection
         self.max_laps = max_laps
-        self.schedule = schedule  # schedule(ms, fn): run fn later on the GUI thread
+        self._schedule = schedule  # schedule(ms, fn): run fn later on the GUI thread
         self.stack = ActionStack(config.MAX_STACK_SIZE)
-        self.resolving = False
         self.opponent_left = False
+        self.i_want_rematch = False
+        self.opponent_wants_rematch = False
+        self._inbox = queue.Queue()
+        self._generation = 0
+        self._reset_race()
+
+    def _reset_race(self):
+        self.stack.clear()
+        self.resolving = False
         self.winner = None  # becomes "me", "opponent" or "tie"
         self._resolve_at = None
-        self._inbox = queue.Queue()
+
+    def schedule(self, ms, fn):
+        """Run fn after ms milliseconds, unless a rematch starts first.
+
+        Timed effects (nitro wearing off, a firewall dropping) must not leak
+        into the next race, so each one remembers which race it belongs to.
+        """
+        generation = self._generation
+
+        def guarded():
+            if generation == self._generation:
+                fn()
+
+        self._schedule(ms, guarded)
 
     # Called from the network thread: only touch the queue here.
 
@@ -47,29 +70,37 @@ class GameManager:
             if line is None:
                 print("Opponent disconnected")
                 self.opponent_left = True
-                continue
-            try:
-                action = Action.decode(line)
-            except ValueError:
-                print(f"Ignoring unexpected message: {line!r}")
-                continue
-            if action.owner != self.my_id:
-                print(f"Opponent cast {BOOSTS[action.boost].name}")
-                self._push(action)
+            elif line == REMATCH:
+                self.opponent_wants_rematch = True
+            else:
+                self._handle_action_line(line)
+
+    def _handle_action_line(self, line):
+        try:
+            action = Action.decode(line)
+        except ValueError:
+            print(f"Ignoring unexpected message: {line!r}")
+            return
+        if action.owner != self.my_id:
+            print(f"Opponent cast {BOOSTS[action.boost].name}")
+            self._push(action)
+
+    def can_cast(self, index):
+        """Whether the local player could cast this boost right now."""
+        return (
+            not self.resolving
+            and not self.winner
+            and not self.stack.is_full()
+            and self.me.can_afford(BOOSTS[index].cost)
+            and not self.opponent.firewall_active
+        )
 
     def cast(self, index):
         """The local player pressed a boost button."""
         boost = BOOSTS[index]
-        if self.resolving or self.winner:
-            return
-        if self.stack.is_full():
-            print("Stack is full")
-            return
-        if not self.me.can_afford(boost.cost):
-            print("Insufficient RAM")
-            return
-        if self.opponent.firewall_active:
-            print(f"Opponent's firewall blocked your {boost.name}")
+        if not self.can_cast(index):
+            if self.opponent.firewall_active:
+                print(f"Opponent's firewall blocked your {boost.name}")
             return
         self.me.spend(boost.cost)
         action = Action(self.my_id, index)
@@ -98,6 +129,24 @@ class GameManager:
             self.winner = "me"
         elif opponent_laps >= self.max_laps:
             self.winner = "opponent"
+
+    # Rematch: both players have to ask for one before the race restarts.
+
+    def request_rematch(self):
+        if not self.i_want_rematch:
+            self.i_want_rematch = True
+            self.connection.send(REMATCH)
+
+    def rematch_ready(self):
+        return self.i_want_rematch and self.opponent_wants_rematch
+
+    def start_rematch(self):
+        self._generation += 1  # cancels every pending timed effect
+        self.me.reset()
+        self.opponent.reset()
+        self._reset_race()
+        self.i_want_rematch = False
+        self.opponent_wants_rematch = False
 
     def _push(self, action):
         self.stack.push(action)

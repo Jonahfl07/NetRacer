@@ -8,6 +8,10 @@ class Player:
         self.name = name
         self.colour = colour
         self.max_ram = config.MAX_RAM
+        self.reset()
+
+    def reset(self):
+        """Back to starting values, for the beginning of a race or a rematch."""
         self.ram = config.STARTING_RAM
         self.recharge_rate = config.RAM_RECHARGE_RATE
         self.speed_multiplier = 1.0
@@ -19,6 +23,10 @@ class Player:
     @property
     def firewall_active(self):
         return self._firewalls > 0
+
+    @property
+    def frozen(self):
+        return self._freezes > 0
 
     @property
     def speed(self):

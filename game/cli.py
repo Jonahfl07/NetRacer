@@ -6,7 +6,6 @@
 """
 
 import argparse
-import os
 
 from guizero import App
 
@@ -15,9 +14,6 @@ from game_manager import GameManager
 from gui import Gui
 from network import PeerConnection
 from player import Player
-
-ASSETS = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets")
-
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Two-player networked hacker racing game.")
@@ -32,10 +28,9 @@ def parse_args():
     for sub in (host, join):
         sub.add_argument("--laps", type=int, default=config.DEFAULT_LAPS,
                          help="laps needed to win (both players should use the same value)")
-        sub.add_argument("--car", default=os.path.join(ASSETS, "car_green.png"),
-                         help="image for your car")
-        sub.add_argument("--opponent-car", default=os.path.join(ASSETS, "car_orange.png"),
-                         help="image for your opponent's car")
+        sub.add_argument("--car", help="optional image for your car (default: a blue circle)")
+        sub.add_argument("--opponent-car",
+                         help="optional image for your opponent's car (default: an orange circle)")
     return parser.parse_args()
 
 
@@ -49,9 +44,9 @@ def main():
         address, _, port = args.address.partition(":")
         connection = PeerConnection.join(address, int(port or config.DEFAULT_PORT))
 
-    app = App("Hack Racer", width=config.WINDOW_SIZE, height=config.WINDOW_SIZE + 100)
-    me = Player("You", "green")
-    opponent = Player("Your opponent", "orange")
+    app = App("Hack Racer", width=config.WINDOW_WIDTH, height=config.WINDOW_HEIGHT)
+    me = Player("You", config.MY_COLOUR)
+    opponent = Player("Your opponent", config.OPPONENT_COLOUR)
     game = GameManager(my_id, me, opponent, connection, args.laps, schedule=app.after)
     connection.start_receiving(game.receive, game.peer_disconnected)
     Gui(app, game, args.car, args.opponent_car)

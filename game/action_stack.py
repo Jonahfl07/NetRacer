@@ -30,6 +30,13 @@ class ActionStack:
     def __len__(self):
         return len(self._items)
 
+    def items(self):
+        """Oldest first. The last item is the top of the stack."""
+        return list(self._items)
+
+    def clear(self):
+        self._items.clear()
+
     def is_full(self):
         return len(self._items) >= self.max_size
 

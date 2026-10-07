@@ -8,22 +8,27 @@ RIGHT, DOWN, LEFT, UP = "right", "down", "left", "up"
 
 
 class Car:
-    def __init__(self, drawing, player, image_path=None):
+    def __init__(self, drawing, player, colour, draw_offset=0, image_path=None):
         self.drawing = drawing
         self.player = player
+        self.draw_offset = draw_offset
+        self._is_image = bool(image_path and os.path.exists(image_path))
+        self._canvas = drawing.tk
+        if self._is_image:
+            self._shape = drawing.image(0, 0, image_path)
+        else:
+            self._shape = drawing.oval(
+                0, 0, config.CAR_SIZE, config.CAR_SIZE,
+                color=colour, outline=2, outline_color="#2b2b3b",
+            )
+        self.reset()
+
+    def reset(self):
         self.x = config.TRACK_MARGIN
         self.y = config.TRACK_MARGIN
         self.direction = RIGHT
         self.laps = 0
-        self._is_image = bool(image_path and os.path.exists(image_path))
-        if self._is_image:
-            self._shape = drawing.image(self.x, self.y, image_path)
-        else:
-            # No sprite available: draw a square in the player's colour.
-            self._shape = drawing.rectangle(
-                self.x, self.y, self.x + config.CAR_SIZE, self.y + config.CAR_SIZE,
-                color=player.colour,
-            )
+        self._redraw()
 
     def move(self, width, height):
         """Advance one frame. Returns True if this move completed a lap."""
@@ -60,9 +65,9 @@ class Car:
         return lap_done
 
     def _redraw(self):
-        canvas = self.drawing.tk
+        x = self.x + self.draw_offset
+        y = self.y + self.draw_offset
         if self._is_image:
-            canvas.coords(self._shape, self.x, self.y)
+            self._canvas.coords(self._shape, x, y)
         else:
-            canvas.coords(self._shape, self.x, self.y,
-                          self.x + config.CAR_SIZE, self.y + config.CAR_SIZE)
+            self._canvas.coords(self._shape, x, y, x + config.CAR_SIZE, y + config.CAR_SIZE)

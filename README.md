@@ -2,6 +2,8 @@
 
 A two-player networked racing game in Python. Each player's car laps a track automatically. You win by spending RAM on boosts and hacks at the right moment. Casts go onto a shared **stack** (like Magic: The Gathering). Every new cast restarts a 5-second countdown so the other player can respond. When the countdown runs out, the stack resolves last-in, first-out.
 
+The window follows the design in my project report ([docs/NetRacer_Report.docx](docs/NetRacer_Report.docx)): a RAM bar along the top, the action stack under it (the next action to resolve is on the left, blue is yours and orange is your opponent's), boosts down the left in green, hacks down the right in red, and the track in the middle.
+
 I first wrote this at 16 to learn sockets, threading and GUI programming. I later restructured it into modules and fixed the bugs listed under [What changed in the cleanup](#what-changed-in-the-cleanup).
 
 ## Running it
@@ -19,7 +21,7 @@ python main1.py                     # same machine
 python main1.py 192.168.1.20        # another machine on your network (HOST or HOST:PORT)
 ```
 
-Options (both scripts): `--laps N` (default 10, use the same value on both sides), and `--car` / `--opponent-car` for custom sprites. The host also takes `--port`. If an image is missing, the car is drawn as a coloured square.
+Options (both scripts): `--laps N` (default 10, use the same value on both sides), and `--car` / `--opponent-car` to use your own car images instead of the default circles. The host also takes `--port`. When a race ends, either player can click **Rematch**, and the race restarts once both have.
 
 ## Boosts and hacks
 
@@ -29,7 +31,7 @@ Options (both scripts): `--laps N` (default 10, use the same value on both sides
 | Firewall | 5 | For 10 s, your opponent can't cast, and their actions resolving on the stack are negated |
 | Hyperthreading | 10 | Your RAM recharge rate x1.5 for the rest of the race |
 | System Shutdown | 9 | *Hack:* freezes your opponent for 10 s |
-| Data Spikes | 3 | *Hack:* your opponent's speed x0.9 for the rest of the race |
+| Spike Deployment | 3 | *Hack:* your opponent's speed x0.9 for the rest of the race |
 
 RAM recharges at 0.2 per second, up to a maximum of 12. The stack holds up to 6 actions.
 
@@ -39,13 +41,13 @@ RAM recharges at 0.2 per second, up to a maximum of 12. The stack holds up to 6 
 |---|---|
 | `main.py`, `main1.py` | Launchers: `main.py` hosts, `main1.py` joins |
 | `game/cli.py` | Command-line arguments, wiring everything together |
-| `network.py` | One TCP connection between the players, with newline-delimited messages |
-| `game_manager.py` | Rules: casting, the countdown, resolving the stack, win detection |
-| `action_stack.py` | The stack and the wire format for an action (`host.3` = host cast boost 3) |
-| `boosts.py` | Boost definitions and their effects |
-| `player.py` | RAM, speed, firewall and freeze state |
-| `car.py` | Car movement and lap counting |
-| `gui.py` | The guizero window and the main loop |
+| `game/network.py` | One TCP connection between the players, with newline-delimited messages |
+| `game/game_manager.py` | Rules: casting, the countdown, resolving the stack, win detection |
+| `game/action_stack.py` | The stack and the wire format for an action (`host.3` = host cast boost 3) |
+| `game/boosts.py` | Boost definitions and their effects |
+| `game/player.py` | RAM, speed, firewall and freeze state |
+| `game/car.py` | Car movement and lap counting |
+| `game/gui.py` | The guizero window: RAM bar, stack row, buttons, track and the end-of-race screen |
 
 **Threading model.** Only the network reader runs on a background thread, and all it does is put incoming lines on a `queue.Queue`. The GUI thread drains that queue every frame, so all game state is changed from a single thread. Timed effects (nitro, firewall, shutdown) are scheduled with Tk's `after()` instead of `time.sleep()` in worker threads, so the code needs no locks.
 
@@ -67,5 +69,6 @@ RAM recharges at 0.2 per second, up to a maximum of 12. The stack holds up to 6 
 - **Lap counting.** Laps are counted when a car turns the final corner. Previously, a car frozen on the start line gained a lap every frame.
 - **The "you lost" screen** crashed. It now works, and a tie is handled too.
 - **RAM costs.** RAM is now charged when you cast. Previously, only the top item of the stack was charged.
-- **Hardcoded paths and ports** were replaced with command-line options, and sprites now live in `game/assets/`.
+- **Hardcoded paths and ports** were replaced with command-line options, and the cars are now drawn in code, so the game needs no image files.
+- **GUI redesign** to match the report: RAM bar, stack row with colour-coded entries, green boost and red hack buttons that grey out when you can't use them, and a result screen with Rematch and Quit.
 - Removed duplicate imports and dead code (`update_speed`, `check_boundaries`).

@@ -10,14 +10,14 @@ class Boost:
     is_hack: bool  # hacks hit the opponent; boosts help the caster
 
 
-NITRO, FIREWALL, HYPERTHREADING, SYSTEM_SHUTDOWN, DATA_SPIKES = range(5)
+NITRO, FIREWALL, HYPERTHREADING, SYSTEM_SHUTDOWN, SPIKE_DEPLOYMENT = range(5)
 
 BOOSTS = [
     Boost("Nitro", 4, is_hack=False),
     Boost("Firewall", 5, is_hack=False),
     Boost("Hyperthreading", 10, is_hack=False),
     Boost("System Shutdown", 9, is_hack=True),
-    Boost("Data Spikes", 3, is_hack=True),
+    Boost("Spike Deployment", 3, is_hack=True),
 ]
 
 
@@ -38,7 +38,7 @@ def apply_boost(index, target, schedule):
     elif index == SYSTEM_SHUTDOWN:
         target.freeze()
         schedule(10000, target.unfreeze)
-    elif index == DATA_SPIKES:
+    elif index == SPIKE_DEPLOYMENT:
         target.multiply_speed(0.9)
     else:
         raise ValueError(f"unknown boost {index}")
